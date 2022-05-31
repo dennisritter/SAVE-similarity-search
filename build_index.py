@@ -6,6 +6,8 @@ import pandas as pd
 import faiss
 import torch
 import torchvision
+from torchvision.io import read_image
+from torchvision.utils import make_grid
 from transformers import ViTFeatureExtractor, ViTModel
 from PIL import Image
 from tqdm import tqdm
@@ -24,51 +26,57 @@ CLASSES = ["Couch", "Chair", "OfficeSideChair"]
 # "Ottoman","Counter", "BarCounter","Desk",	"LDesk","Table",   "AccentTable", "CoffeeTable","DiningTable"," BarTable", "RoundTable", "DraftingTable", "OutdoorTable","SupportFurniture","Pedestal"]
 N_CLUSTERS = 128
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+# device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
-model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
-model = model.to(device)
+# feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
+# model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
+# model = model.to(device)
 
-# get metadata for specified classes
-meta = pd.read_csv(METADATA_FILE)
-meta = meta[meta["category"].str.contains('|'.join(CLASSES), na=False)]
+# # get metadata for specified classes
+# meta = pd.read_csv(METADATA_FILE)
+# meta = meta[meta["category"].str.contains('|'.join(CLASSES), na=False)]
 
-features = {}
-# Sample threee example ids
-# sample_ids = [sid[4:] for sid in meta.sample(n=3)["fullId"].values]
-sample_ids = [sid[4:] for sid in meta["fullId"].values]
-for sample_id in tqdm(sample_ids):
-    sample_id_dir = f'{DATA_DIR}/screenshots/{sample_id}'
-    if os.path.isdir(sample_id_dir):
-        samples_fn = [f'{sample_id_dir}/{imfn}' for imfn in os.listdir(sample_id_dir) if imfn.endswith('.png')]
-        for fn in samples_fn:
-            im = Image.open(fn).convert('RGB')
-            inputs = feature_extractor(im, return_tensors="pt")
-            inputs = inputs.to(device)
-            with torch.no_grad():
-                outputs = model(**inputs).pooler_output
-                features[fn] = outputs.to('cpu')
+# features = {}
+# # Sample threee example ids
+# # sample_ids = [sid[4:] for sid in meta.sample(n=3)["fullId"].values]
+# sample_ids = [sid[4:] for sid in meta["fullId"].values]
+# for sample_id in tqdm(sample_ids):
+#     sample_id_dir = f'{DATA_DIR}/screenshots/{sample_id}'
+#     if os.path.isdir(sample_id_dir):
+#         samples_fn = [f'{sample_id_dir}/{imfn}' for imfn in os.listdir(sample_id_dir) if imfn.endswith('.png')]
+#         for fn in samples_fn:
+#             im = Image.open(fn).convert('RGB')
+#             inputs = feature_extractor(im, return_tensors="pt")
+#             inputs = inputs.to(device)
+#             with torch.no_grad():
+#                 outputs = model(**inputs).pooler_output
+#                 features[fn] = outputs.to('cpu')
 
 
-# Save he features
-with open('./out/features.pickle', 'wb') as f:
-    print(f'SAVING FEATURES TO: {f}')
-    pickle.dump(features, f)
+# # Save he features
+# with open('./out/features.pickle', 'wb') as f:
+#     print(f'SAVING FEATURES TO: {f}')
+#     pickle.dump(features, f)
 
 with open('./out/features.pickle', 'rb') as f:
-    print(f'LOADING FEATURES FROM: {f}')
+    print(f'LOADING FEATURES FROM: {f.name}')
     features = pickle.load(f)
 
 im_paths, im_features = zip(*features.items())
-im_paths = list(im_paths)
+# Save image paths in numpy array separately for similarity search
+im_paths = np.array(im_paths)
+np.save('./out/im_paths.npy', im_paths)
+
+# Save image features 
 im_features = list(im_features)
 im_features = [feat.numpy().astype('float32').squeeze() for feat in im_features]
 im_features = np.array(im_features)
+
 ## Using a flat index
 index_flat = faiss.IndexFlatL2(768)  # build a flat (CPU) index
 index_flat.add(im_features)
 faiss.write_index(index_flat, './out/shapenetsem_index.faiss')
+
 
 ## Sanity Check
 #### SEARCH
@@ -79,3 +87,32 @@ print(index.is_trained)
 print(index.ntotal)
 print(I)
 print(D)
+
+im_paths = np.load('./out/im_paths.npy')
+print(im_paths[I[0]])
+
+print('########################################')
+
+fn = './data/jhoster_chair/10.png'
+im_q = Image.open(fn).convert('RGB')
+feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
+model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
+inputs = feature_extractor(im_q, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs).pooler_output
+outputs = np.array(outputs)
+k = 10
+D, I = index.search(outputs, k)
+print(I)
+print(D)
+print(im_paths[I[0]])
+
+ims = [read_image(im) for im in im_paths[I[0]]]
+
+grid_size = (1,len(I[0]))
+padding = 50
+n_img = grid_size[0] * grid_size[1]
+grid = make_grid(ims, nrow=grid_size[1], padding=padding)
+img_grid = torchvision.transforms.ToPILImage()(grid)
+im_q.show()
+img_grid.show()

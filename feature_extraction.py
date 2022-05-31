@@ -1,17 +1,11 @@
 import os
-import random
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import faiss
 import torch
-import torchvision
 from transformers import ViTFeatureExtractor, ViTModel
 from PIL import Image
 from tqdm import tqdm
-from sklearn.cluster import MiniBatchKMeans
-import cv2
-import json
 import pickle
 
 DATA_DIR = "./data/ShapeNetSemV0"
@@ -26,27 +20,8 @@ N_CLUSTERS = 128
 
 feature_extractor = ViTFeatureExtractor.from_pretrained("google/vit-base-patch16-224-in21k")
 model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k")
+inputs = feature_extractor(img, return_tensors="pt")
+with torch.no_grad():
+    outputs = model(**inputs).pooler_output
 
-# get metadata for specified classes
-meta = pd.read_csv(METADATA_FILE)
-meta = meta[meta["category"].str.contains('|'.join(CLASSES), na=False)]
-
-features = {}
-# Sample threee example ids
-# sample_ids = [sid[4:] for sid in meta.sample(n=3)["fullId"].values]
-sample_ids = [sid[4:] for sid in meta["fullId"].values]
-for sample_id in tqdm(sample_ids):
-    sample_id_dir = f'{DATA_DIR}/screenshots/{sample_id}'
-    if os.path.isdir(sample_id_dir):
-        samples_fn = [f'{sample_id_dir}/{imfn}' for imfn in os.listdir(sample_id_dir) if imfn.endswith('.png')]
-        for fn in samples_fn:
-            im = Image.open(fn).convert('RGB')
-            inputs = feature_extractor(im, return_tensors="pt")
-            with torch.no_grad():
-                outputs = model(**inputs).pooler_output
-                features[fn] = outputs
-
-
-with open('./out/features.pickle', 'wb') as f:
-    pickle.dump(features, f)
 
