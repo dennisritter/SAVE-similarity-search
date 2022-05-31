@@ -17,11 +17,22 @@ import pickle
 with open('./out/features.pickle', 'rb') as f:
     loaded_features = pickle.load(f)
 
-print(len(loaded_features.keys()))
-
-res = faiss.StandardGpuResources()  # use a single GPU
+im_paths, im_features = zip(*loaded_features.items())
+im_paths = list(im_paths)
+im_features = list(im_features)
+im_features = [feat.detach().cpu().numpy().astype('float32').squeeze() for feat in im_features]
+im_features = np.array(im_features)
 ## Using a flat index
 index_flat = faiss.IndexFlatL2(768)  # build a flat (CPU) index
-# make it a flat GPU index
-gpu_index_flat = faiss.index_cpu_to_gpu(res, 0, index_flat)
-gpu_index_flat.add_with_ids()
+faiss.write_index(index_flat, './out/shapenetsem_index.faiss')
+
+
+
+#### SEARCH
+print(im_paths[:3])
+
+k = 4
+index = faiss.read_index('./out/shapenetsem_index.faiss')
+D, I = index.search(im_features[:3], k)
+print(I)
+print(D)

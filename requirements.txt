@@ -1,0 +1,11 @@
+matplotlib
+pandas
+scikit-learn
+pillow
+numpy
+tqdm
+faiss-gpu
+opencv-python
+opencv-contrib-python
+transformers
+datasets
