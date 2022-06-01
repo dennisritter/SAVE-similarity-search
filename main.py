@@ -1,5 +1,4 @@
 import similarity_search as ss
-import trimesh
 
 
 if __name__ == "__main__":
