@@ -31,8 +31,10 @@ def get_meshes_from_images(ims_q_fn: list[str], k: int=5, index_name:str ='vit_i
             # remove duplicates
             mesh_ids_for_qs.append(list(set(mesh_ids_for_q)))
         print(mesh_ids_for_qs)
+        return mesh_ids_for_qs
     else:
         raise ValueError(f'Argument: index_name={index_name} is not a valid feature.')
+    
 
 
 
