@@ -14,25 +14,25 @@ import cv2
 import json
 import pickle
 
-def get_neighbours(ims_q_fn: list[str], k: int=5, features:str ='vit_in21k_shapenet'):
+def get_neighbours(ims_q_fn: list[str], k: int=5, index_name:str ='vit_in21k_shapenet'):
     """ Returns list of tuples of distances and indices of the k nearest neighbours 
         for each given image filename from a search index of specified features.
 
         Args:
             ims_fn (list[str]): A list of filenames of query images.
             k (int): The number of neighbours to find.
-            features (str): The features the search index contains. Specifies the index/method. 
+            index_name (str): The index_name specifies the index/method that is used for retrieval. 
     """
 
     if not all([os.path.isfile(fn) for fn in ims_q_fn]):
         raise ValueError(f'Argument: ims_fn contains filenames that are not valid')
     
-    if features == 'vit_in21k_shapenet':
+    if index_name == 'vit_in21k_shapenet':
         return get_neighbours_vit_in21k(ims_q_fn, k)
     # elif features == '':
     #     return ...
     else:
-        raise ValueError(f'Argument: features={features} is not a valid feature.')
+        raise ValueError(f'Argument: index_name={index_name} is not a valid feature.')
 
 def get_neighbours_vit_in21k(ims_q_fn: list[str], k: int):
     """ Returns list of tuples of distances and indices of the k nearest neighbours for each 
