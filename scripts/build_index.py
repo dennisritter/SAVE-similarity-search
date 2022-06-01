@@ -1,19 +1,11 @@
 import os
-import random
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import faiss
 import torch
-import torchvision
-from torchvision.io import read_image
-from torchvision.utils import make_grid
 from transformers import ViTFeatureExtractor, ViTModel
 from PIL import Image
 from tqdm import tqdm
-from sklearn.cluster import MiniBatchKMeans
-import cv2
-import json
 import pickle
 
 INDEX_NAME="vit_in21k_shapenet"
@@ -42,9 +34,9 @@ sample_ids = [sid[4:] for sid in meta["fullId"].values]
 for sample_id in tqdm(sample_ids):
     sample_id_dir = f'{DATA_DIR}/screenshots/{sample_id}'
     if os.path.isdir(sample_id_dir):
-        samples_fn = [f'{sample_id_dir}/{imfn}' for imfn in os.listdir(sample_id_dir) if imfn.endswith('.png')]
+        samples_fn = [f'{imfn}' for imfn in os.listdir(sample_id_dir) if imfn.endswith('.png')]
         for fn in samples_fn:
-            im = Image.open(fn).convert('RGB')
+            im = Image.open(f'{sample_id_dir}/{fn}').convert('RGB')
             inputs = feature_extractor(im, return_tensors="pt")
             inputs = inputs.to(device)
             with torch.no_grad():
