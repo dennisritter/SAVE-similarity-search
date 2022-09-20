@@ -45,7 +45,7 @@ for sample_id in tqdm(sample_ids):
 
 
 # Save the features
-with open(f'{OUT_DIR}/features_{INDEX_NAME}.pickle', 'wb') as f:
+with open(f'{OUT_DIR}/features_{INDEX_NAME}.pickle', 'wb+') as f:
     print(f'SAVING FEATURES TO: {f}')
     pickle.dump(features, f)
 
