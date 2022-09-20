@@ -32,7 +32,7 @@ To build an index we provide the `build_index_vit_in21k_shapenet.py` script. It 
 requirements:
 1. Get the ShapeNetSemV0 dataset (screenshots, metadata.csv)
 2. Build the index for ViT_in21k features of shapenet images
-3. make sure these files were created after building the index: features_vit_in21k_shapenet, index_vit_in21k_shapenet, imfn_vit_in21k_shapenet
+3. make sure these files were created after building the index: features_vit_in21k_shapenet, index_vit_in21k_shapenet, imfn_vit_in21k_shapenet (if imfn_vit_in21k_shapenet.npy is missing, but im_paths_vit_in21k_shapenet.npy exists, rename file)
 4. Import the simiarity_search module and run ss.get_meshes_from_images()
 ```python
 import similarity_search as ss
